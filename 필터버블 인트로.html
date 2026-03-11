@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>킹메이커: 더 필터 버블 (Part 1)</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Noto+Sans+KR:wght@300;400;700&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #050505;
+            --text-color: #f0f0f0;
+            --accent-color: #e74c3c;
+            --gold-color: #ffd700;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: 'Noto Sans KR', sans-serif;
+            overflow: hidden;
+            width: 100vw;
+            height: 100vh;
+            /* [보안] 텍스트 및 요소 선택 방지 CSS */
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+        }
+
+        /* [보안] 이미지 및 비디오 드래그 저장 방지 CSS */
+        img,
+        video {
+            -webkit-user-drag: none;
+            -khtml-user-drag: none;
+            -moz-user-drag: none;
+            -o-user-drag: none;
+            user-drag: none;
+        }
+
+        /* --- UI & Navigation --- */
+        #start-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #000;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+        }
+
+        .start-msg {
+            font-family: 'Black Han Sans';
+            font-size: 3rem;
+            color: #fff;
+            animation: pulse 1.5s infinite;
+        }
+
+        .nav-ui {
+            position: fixed;
+            z-index: 2000;
+            cursor: pointer;
+            font-family: 'Black Han Sans';
+            font-size: 1.5rem;
+            color: #888;
+            transition: 0.3s;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 10px 20px;
+            border-radius: 5px;
+        }
+
+        .nav-ui:hover {
+            color: #fff;
+            background: var(--accent-color);
+        }
+
+        #btn-menu {
+            top: 20px;
+            left: 20px;
+        }
+
+        #btn-prev {
+            bottom: 20px;
+            left: 20px;
+        }
+
+        #btn-next {
+            bottom: 20px;
+            right: 20px;
+        }
+
+        .drawer {
+            position: fixed;
+            top: 0;
+            left: -350px;
+            width: 320px;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.95);
+            border-right: 2px solid var(--accent-color);
+            transition: left 0.3s ease;
+            z-index: 3000;
+            padding: 40px;
+        }
+
+        .drawer.open {
+            left: 0;
+        }
+
+        .drawer li {
+            margin-bottom: 20px;
+            cursor: pointer;
+            list-style: none;
+            font-size: 1.3rem;
+            font-weight: bold;
+        }
+
+        .drawer li:hover {
+            color: var(--accent-color);
+        }
+
+        .scene {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.8s ease;
+            background: #000;
+        }
+
+        .scene.active {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        /* Scene 공통 스타일 */
+        .cover-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+        }
+
+        .cover-img {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            transition: opacity 2s ease;
+        }
+
+        .intro-text-box {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 10;
+            text-align: center;
+            opacity: 0;
+            transition: opacity 1s;
+            width: 100%;
+        }
+
+        .intro-title {
+            font-family: 'Black Han Sans';
+            font-size: 6.5rem;
+            margin-bottom: 30px;
+            text-shadow: 0 0 30px rgba(231, 76, 60, 0.8);
+            color: #fff;
+        }
+
+        .btn-main {
+            padding: 22px 70px;
+            font-size: 2.4rem;
+            background: var(--accent-color);
+            color: #fff;
+            border: none;
+            cursor: pointer;
+            font-family: 'Black Han Sans';
+            box-shadow: 0 0 30px var(--accent-color);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.05);
+            }
+
+            100% {
+                transform: scale(1);
+            }
+        }
+
+        .video-wrapper-full {
+            width: 100vw;
+            height: 100vh;
+            background: #000;
+        }
+
+        .video-wrapper-full video {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+
+        /* Scene 3: 회귀 스타일 */
+        .comic-viewport {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            position: relative;
+            background: #000;
+        }
+
+        .comic-image {
+            width: 200%;
+            height: 200%;
+            object-fit: cover;
+            opacity: 0.8;
+            transform-origin: top left;
+            animation: comic-sequence 15s linear forwards;
+        }
+
+        @keyframes comic-sequence {
+            0% {
+                transform: translate(0, -50%);
+            }
+
+            /* 3. 좌하 */
+            20% {
+                transform: translate(0, -50%);
+            }
+
+            /* 대기 */
+            25% {
+                transform: translate(-50%, 0);
+            }
+
+            /* 2. 우상 */
+            45% {
+                transform: translate(-50%, 0);
+            }
+
+            /* 대기 */
+            50% {
+                transform: translate(0, 0);
+            }
+
+            /* 1. 좌상 */
+            70% {
+                transform: translate(0, 0);
+            }
+
+            /* 대기 */
+            75% {
+                transform: translate(-50%, -50%);
+            }
+
+            /* 4. 우하 */
+            90% {
+                transform: translate(-50%, -50%);
+            }
+
+            /* 대기 */
+            100% {
+                width: 100%;
+                height: 100%;
+                transform: translate(0, 0);
+            }
+
+            /* 전체 */
+        }
+
+        .scene3-text {
+            position: absolute;
+            bottom: 10%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 94%;
+            text-align: center;
+            font-size: 2.4rem;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 24px;
+            border-radius: 10px;
+            white-space: pre-wrap;
+            font-weight: bold;
+        }
+
+        #flash-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #fff;
+            z-index: 5000;
+            pointer-events: none;
+            opacity: 0;
+        }
+
+        .flash-active {
+            animation: flash-anim 3s forwards;
+        }
+
+        @keyframes flash-anim {
+
+            0%,
+            100% {
+                opacity: 0;
+            }
+
+            10%,
+            90% {
+                opacity: 1;
+            }
+        }
+
+        /* Scene 4: 각성 스타일 */
+        .line-text-container {
+            width: 94%;
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .line-text {
+            font-size: 3rem;
+            font-family: 'Noto Sans KR', sans-serif;
+            font-weight: bold;
+            color: #fff;
+            opacity: 0;
+            transition: opacity 1s ease;
+            text-align: center;
+            text-shadow: 0 0 10px rgba(0, 0, 0, 0.8);
+            line-height: 1.4;
+            width: 100%;
+        }
+
+        .golden-word {
+            color: #e8b84b;
+            text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.6);
+            display: inline-block;
+            font-family: 'Black Han Sans';
+            animation: gold-flutter 3s infinite ease-in-out;
+            margin: 0 5px;
+        }
+
+        @keyframes gold-flutter {
+
+            0%,
+            100% {
+                transform: translateY(0);
+            }
+
+            50% {
+                transform: translateY(-2px);
+            }
+        }
+
+        /* Scene 6: 대한민국 타이틀 */
+        .dystopia-title {
+            font-family: 'Black Han Sans';
+            font-size: 4.2rem;
+            margin-bottom: 40px;
+            color: #fff;
+            text-shadow: 0 0 20px #ff0000, 0 0 40px #ff0000;
+            text-align: center;
+        }
+    </style>
+</head>
+
+<body oncontextmenu="return false" onselectstart="return false" ondragstart="return false">
+
+    <div id="flash-overlay"></div>
+
+    <!-- UI: 전역 내비게이션 및 시작 오버레이 -->
+    <div id="start-overlay" onclick="startExperience()">
+        <div class="start-msg">▼ CLICK TO START ▼</div>
+        <p style="color:#888; margin-top:20px;">화면을 클릭하면 음악과 함께 시작됩니다.</p>
+    </div>
+
+    <div class="nav-ui" id="btn-menu" onclick="toggleDrawer()">☰ MENU</div>
+    <div class="nav-ui" id="btn-prev" onclick="changeScene(-1)">◀ PREV</div>
+    <div class="nav-ui" id="btn-next" onclick="changeScene(1)">NEXT ▶</div>
+
+    <div class="drawer" id="drawer">
+        <h2>CONTENTS (Part 1)</h2>
+        <ul>
+            <li onclick="goToScene(1)">01. 킹메이커 시작</li>
+            <li onclick="goToScene(2)">02. 킹메이커 영상</li>
+            <li onclick="goToScene(3)">03. 회귀</li>
+            <li onclick="goToScene(4)">04. 각성</li>
+            <li onclick="goToScene(5)">05. 현황 영상</li>
+            <li onclick="goToScene(6)">06. 2026 대한민국</li>
+        </ul>
+    </div>
+
+    <!-- START: 01. 킹메이커 시작 (Scene 1) -->
+    <div id="scene-1" class="scene active">
+        <audio id="bgm-intro"
+            src="https://ooo9luzdoplzs8wq.public.blob.vercel-storage.com/%ED%95%84%ED%84%B0%EB%B2%84%EB%B8%94/%EC%9D%B8%ED%8A%B8%EB%A1%9C.mp3" loop></audio>
+        <div class="cover-container">
+            <img src=https://ooo9luzdoplzs8wq.public.blob.vercel-storage.com/%ED%95%84%ED%84%B0%EB%B2%84%EB%B8%94/%ED%91%9C%EC%A7%80%201.png" id="cover-1"
+                class="cover-img" alt="표지1">
+            <img src="https://ooo9luzdoplzs8wq.public.blob.vercel-storage.com/%ED%95%84%ED%84%B0%EB%B2%84%EB%B8%94/%ED%91%9C%EC%A7%80%202.png" id="cover-2"
+                class="cover-img" alt="표지2">
+            <div class="intro-text-box" id="intro-ui">
+                <div class="intro-title">MISSION START</div>
+                <button class="btn-main" onclick="changeScene(1)">선거 본부 참여하기</button>
+            </div>
+        </div>
+    </div>
+    <!-- END: 01. 킹메이커 시작 -->
+
+    <!-- START: 02. 킹메이커 영상 (Scene 2) -->
+    <div id="scene-2" class="scene">
+        <div class="video-wrapper-full">
+            <video controls controlsList="nodownload" oncontextmenu="return false;">
+                <source
+                    src="https://ooo9luzdoplzs8wq.public.blob.vercel-storage.com/%ED%95%84%ED%84%B0%EB%B2%84%EB%B8%94/%ED%82%B9%EB%A9%94%EC%9D%B4%EC%BB%A4.mp4"
+                    type="video/mp4">
+            </video>
+        </div>
+    </div>
+    <!-- END: 02. 킹메이커 영상 -->
+
+    <!-- START: 03. 회귀 (Scene 3) -->
+    <div id="scene-3" class="scene">
+        <div class="comic-viewport">
+            <img src="https://ooo9luzdoplzs8wq.public.blob.vercel-storage.com/%ED%95%84%ED%84%B0%EB%B2%84%EB%B8%94/%EC%BB%A8%EC%85%89.png"
+                class="comic-image">
+        </div>
+        <div class="scene3-text" id="scene3-typewriter"></div>
+    </div>
+    <!-- END: 03. 회귀 -->
+
+    <!-- START: 04. 각성 (Scene 4) -->
+    <div id="scene-4" class="scene">
+        <div class="line-text-container" id="scene4-lines"></div>
+    </div>
+    <!-- END: 04. 각성 -->
+
+    <!-- START: 05. 현황 영상 (Scene 5) -->
+    <div id="scene-5" class="scene">
+        <div class="video-wrapper">
+            <video id="status-video" controls controlsList="nodownload" oncontextmenu="return false;">
+                <source src="https://ooo9luzdoplzs8wq.public.blob.vercel-storage.com/%ED%95%84%ED%84%B0%EB%B2%84%EB%B8%94/%ED%98%84%ED%99%A9.mp4"
+                    type="video/mp4">
+            </video>
+        </div>
+    </div>
+    <!-- END: 05. 현황 영상 -->
+
+    <!-- START: 06. 2026 대한민국 (Scene 6) -->
+    <div id="scene-6" class="scene">
+        <h2 class="dystopia-title">2026 대한민국은 지금</h2>
+        <div class="line-text-container" id="scene6-lines"></div>
+        <div style="margin-top:40px; text-align:center;">
+            <p style="color:var(--gold-color); font-weight:bold; margin-bottom:20px;"></p>
+        </div>
+        <audio id="bgm-dystopia">
+            <source
+                src="https://ooo9luzdoplzs8wq.public.blob.vercel-storage.com/%ED%95%84%ED%84%B0%EB%B2%84%EB%B8%94/%EB%8C%80%ED%95%9C%EB%AF%BC%EA%B5%AD%EC%9D%80%20%EC%A7%80%EA%B8%88.mp3"
+                type="audio/mp3">
+        </audio>
+    </div>
+    <!-- END: 06. 2026 대한민국 -->
+
+    <script>
+        /**
+         * Global State & Configuration
+         */
+        let currentScene = 1;
+        let typingTimer;
+
+        /**
+         * [보안] 우클릭, 드래그, 단축키 차단
+         */
+        document.addEventListener('contextmenu', (e) => e.preventDefault());
+        document.addEventListener('keydown', (e) => {
+            if (e.keyCode === 123) { e.preventDefault(); return false; }
+            if (e.ctrlKey && e.shiftKey && (e.keyCode === 73 || e.keyCode === 74 || e.keyCode === 67)) { e.preventDefault(); return false; }
+            if (e.ctrlKey && e.keyCode === 85) { e.preventDefault(); return false; }
+        });
+        document.addEventListener('dragstart', (e) => e.preventDefault());
+
+        /**
+         * System Core Functions
+         */
+        function startExperience() {
+            document.getElementById('start-overlay').style.display = 'none';
+            initScene1();
+            document.getElementById('bgm-intro').play().catch(e => console.log("Auto-play blocked", e));
+        }
+
+        function changeScene(dir) { goToScene(currentScene + dir); }
+
+        function goToScene(num) {
+            if (num < 1 || num > 6) return; // 파트 1은 6번에서 종료
+
+            document.getElementById(`scene-${currentScene}`).classList.remove('active');
+            document.querySelectorAll('video').forEach(v => v.pause());
+
+            const nextBtn = document.getElementById('btn-next');
+            if (num === 6) nextBtn.style.opacity = '0.3'; else nextBtn.style.opacity = '1';
+
+            const introBgm = document.getElementById('bgm-intro');
+
+            if (num === 2) introBgm.pause();
+
+            if (num === 3) {
+                introBgm.play();
+                startTyping('scene3-typewriter', "김운범 후보... 낙선....\n당했다... 빗물과 피가 섞이기 시작한다...\n만약... 내게 한 번만 더 기회가 주어진다면...", 120);
+            }
+
+            if (currentScene === 3 && num === 4) triggerFlash();
+
+            if (num === 4) {
+                const lines = ["최고의 선거 조력자였던 당신은 곧 눈을 뜹니다.", "말도 안 되는 이 상황에서 정신 차리고,", "다시 한번 본인의 명예와 자존심을 위해 뛰어듭니다.", "판을 흔들고 후보자를 대통령으로 당선 시키세요!!", "이것이 당신의 마지막 기회입니다."];
+                startLineAnimation('scene4-lines', lines, 2000, applyGoldenEffect);
+            }
+
+            if (num === 5) { introBgm.pause(); introBgm.currentTime = 0; }
+
+            if (num === 6) {
+                document.getElementById('bgm-dystopia').play();
+                const lines6 = ["남녀 갈등, 세대 갈등, AI 일자리 문제", "저출산 고령화, 국가 전쟁 문제로", "국민을 통합할 대통령이 필요하다!!", "당신의 능력으로 후보자를 대통령으로 만들어라!"];
+                startLineAnimation('scene6-lines', lines6, 2000);
+            }
+
+            document.getElementById(`scene-${num}`).classList.add('active');
+            currentScene = num;
+            document.getElementById('drawer').classList.remove('open');
+        }
+
+        /**
+         * UI Animation Functions
+         */
+        function startLineAnimation(id, arr, interval, callback) {
+            const container = document.getElementById(id); container.innerHTML = "";
+            arr.forEach((txt, idx) => {
+                const p = document.createElement('div'); p.classList.add('line-text'); p.innerText = txt;
+                container.appendChild(p);
+                setTimeout(() => {
+                    p.style.opacity = 1;
+                    if (idx === arr.length - 1 && callback) setTimeout(callback, 1000);
+                }, idx * interval);
+            });
+        }
+
+        function applyGoldenEffect() {
+            const words = ["조력자", "명예", "자존심", "대통령", "마지막 기회"];
+            const container = document.getElementById('scene4-lines');
+            if (!container) return;
+            let html = container.innerHTML;
+            words.forEach(w => { html = html.replace(new RegExp(w, 'g'), `<span class="golden-word">${w}</span>`); });
+            container.innerHTML = html;
+        }
+
+        /**
+         * Utilities
+         */
+        function triggerFlash() {
+            const flash = document.getElementById('flash-overlay');
+            flash.classList.add('flash-active');
+            setTimeout(() => flash.classList.remove('flash-active'), 3000);
+        }
+
+        function startTyping(id, txt, spd) {
+            const el = document.getElementById(id);
+            if (!el) return;
+            if (typingTimer) clearTimeout(typingTimer);
+            el.innerText = "";
+            let i = 0;
+            function type() {
+                if (i < txt.length) {
+                    el.innerText += txt.charAt(i);
+                    i++;
+                    typingTimer = setTimeout(type, spd);
+                }
+            }
+            type();
+        }
+
+        function toggleDrawer() { document.getElementById('drawer').classList.toggle('open'); }
+
+        function initScene1() {
+            const c1 = document.getElementById('cover-1'), c2 = document.getElementById('cover-2'), ui = document.getElementById('intro-ui');
+            c1.style.opacity = '1'; c2.style.opacity = '0';
+            setTimeout(() => {
+                c1.style.opacity = '0'; c2.style.opacity = '1';
+                setTimeout(() => ui.style.opacity = '1', 1000);
+            }, 5000);
+        }
+    </script>
+
+<script>
+    // 1. 키보드 단축키 차단 (F12, Ctrl+Shift+I, Ctrl+U 등)
+    document.addEventListener('keydown', function(event) {
+        if (event.keyCode === 123 || // F12
+           (event.ctrlKey && event.shiftKey && event.keyCode === 73) || // Ctrl+Shift+I
+           (event.ctrlKey && event.shiftKey && event.keyCode === 74) || // Ctrl+Shift+J
+           (event.ctrlKey && event.keyCode === 85)) { // Ctrl+U
+            event.preventDefault();
+            event.returnValue = false;
+        }
+    });
+
+    // 2. 개발자 도구 강제 정지 (무한 디버거 덫)
+    setInterval(function() {
+        var before = new Date().getTime();
+        debugger; 
+        var after = new Date().getTime();
+        if (after - before > 100) {
+            document.body.innerHTML = "<h1 style='color:red; text-align:center; margin-top:50px;'>보안 정책에 의해 접근이 차단되었습니다.</h1>";
+        }
+    }, 1000);
+</script>
+
+    
+ <script>
+        // 1. 마우스 우클릭 방지 (contextmenu 이벤트 차단)
+        document.addEventListener('contextmenu', function(event) {
+            event.preventDefault();
+        });
+
+        // 추가 팁: 드래그 및 복사도 방지하고 싶다면 아래 주석을 해제하세요.
+        /*
+        // 2. 텍스트 드래그 방지
+        document.addEventListener('selectstart', function(event) {
+            event.preventDefault();
+        });
+
+        // 3. 복사(Ctrl+C) 방지
+        document.addEventListener('copy', function(event) {
+            event.preventDefault();
+        });
+        */
+    </script>
+
+
+</body>
+
+</html>
