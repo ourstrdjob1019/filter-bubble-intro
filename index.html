@@ -183,15 +183,15 @@
 
         .intro-title {
             font-family: 'Black Han Sans';
-            font-size: 6.5rem;
-            margin-bottom: 30px;
+            font-size: clamp(3rem, 8vw, 6.5rem);
+            margin-bottom: clamp(15px, 3vh, 30px);
             text-shadow: 0 0 30px rgba(231, 76, 60, 0.8);
             color: #fff;
         }
 
         .btn-main {
-            padding: 22px 70px;
-            font-size: 2.4rem;
+            padding: clamp(12px, 2vh, 22px) clamp(30px, 5vw, 70px);
+            font-size: clamp(1.2rem, 3vw, 2.4rem);
             background: var(--accent-color);
             color: #fff;
             border: none;
@@ -300,11 +300,12 @@
             bottom: 10%;
             left: 50%;
             transform: translateX(-50%);
-            width: 94%;
+            width: 90%;
+            max-width: 1200px;
             text-align: center;
-            font-size: 2.4rem;
+            font-size: clamp(1.2rem, 2.5vw, 2.4rem);
             background: rgba(0, 0, 0, 0.5);
-            padding: 24px;
+            padding: clamp(15px, 2.5vh, 24px);
             border-radius: 10px;
             white-space: pre-wrap;
             font-weight: bold;
@@ -350,7 +351,7 @@
         }
 
         .line-text {
-            font-size: 3rem;
+            font-size: clamp(1.5rem, 4vw, 3rem);
             font-family: 'Noto Sans KR', sans-serif;
             font-weight: bold;
             color: #fff;
@@ -386,8 +387,8 @@
         /* Scene 6: 대한민국 타이틀 */
         .dystopia-title {
             font-family: 'Black Han Sans';
-            font-size: 4.2rem;
-            margin-bottom: 40px;
+            font-size: clamp(2rem, 5vw, 4.2rem);
+            margin-bottom: clamp(20px, 4vh, 40px);
             color: #fff;
             text-shadow: 0 0 20px #ff0000, 0 0 40px #ff0000;
             text-align: center;
@@ -426,7 +427,7 @@
         <audio id="bgm-intro"
             src="https://ooo9luzdoplzs8wq.public.blob.vercel-storage.com/%ED%95%84%ED%84%B0%EB%B2%84%EB%B8%94/%EC%9D%B8%ED%8A%B8%EB%A1%9C.mp3" loop></audio>
         <div class="cover-container">
-            <img src=https://ooo9luzdoplzs8wq.public.blob.vercel-storage.com/%ED%95%84%ED%84%B0%EB%B2%84%EB%B8%94/%ED%91%9C%EC%A7%80%201.png" id="cover-1"
+            <img src="https://ooo9luzdoplzs8wq.public.blob.vercel-storage.com/%ED%95%84%ED%84%B0%EB%B2%84%EB%B8%94/%ED%91%9C%EC%A7%80%201.png" id="cover-1"
                 class="cover-img" alt="표지1">
             <img src="https://ooo9luzdoplzs8wq.public.blob.vercel-storage.com/%ED%95%84%ED%84%B0%EB%B2%84%EB%B8%94/%ED%91%9C%EC%A7%80%202.png" id="cover-2"
                 class="cover-img" alt="표지2">
