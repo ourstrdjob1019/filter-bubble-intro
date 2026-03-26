@@ -5,7 +5,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>킹메이커: 더 필터 버블 (Part 1)</title>
-    <link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Noto+Sans+KR:wght@300;400;700&display=swap" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Noto+Sans+KR:wght@300;400;700&display=swap"
+        rel="stylesheet">
     <style>
         :root {
             --bg-color: #050505;
@@ -14,7 +16,11 @@
             --gold-color: #ffd700;
         }
 
-        * { box-sizing: border-box; margin: 0; padding: 0; }
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
 
         body {
             background-color: var(--bg-color);
@@ -26,164 +32,437 @@
             display: flex;
             justify-content: center;
             align-items: center;
+            /* [보안] 텍스트 및 요소 선택 방지 CSS */
             -webkit-user-select: none;
             -moz-user-select: none;
             -ms-user-select: none;
             user-select: none;
         }
 
-        /* --- [PC 기본 환경: 원본 코드 완벽 유지] --- */
+        /* 전체 컨테이너를 16:9 또는 기준 비율로 고정하고 스케일링 */
         .main-wrapper {
             position: relative;
             width: 100vw;
             height: 100vh;
-            max-width: 177.78vh;
+            max-width: 177.78vh; /* 16:9 비율 유지 */
             max-height: 56.25vw;
             overflow: hidden;
             background: #000;
         }
 
-        img, video { -webkit-user-drag: none; -khtml-user-drag: none; -moz-user-drag: none; -o-user-drag: none; }
-
-        #start-overlay {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: #000; z-index: 9999; display: flex; flex-direction: column;
-            justify-content: center; align-items: center; cursor: pointer;
+        /* [보안] 이미지 및 비디오 드래그 저장 방지 CSS */
+        img,
+        video {
+            -webkit-user-drag: none;
+            -khtml-user-drag: none;
+            -moz-user-drag: none;
+            -o-user-drag: none;
         }
 
-        .start-msg { font-family: 'Black Han Sans'; font-size: 8vmin; color: #fff; animation: pulse 1.5s infinite; }
-        .start-sub { color: #888; margin-top: 3vmin; font-size: 2vmin; }
+        /* --- UI & Navigation --- */
+        #start-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #000;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+        }
+
+        .start-msg {
+            font-family: 'Black Han Sans';
+            font-size: 8vmin;
+            color: #fff;
+            animation: pulse 1.5s infinite;
+        }
 
         .nav-ui {
-            position: absolute; z-index: 2000; cursor: pointer;
-            font-family: 'Black Han Sans'; font-size: 2.5vmin; color: #888;
-            transition: 0.3s; background: rgba(0, 0, 0, 0.5);
-            padding: 1.5vmin 3vmin; border-radius: 0.8vmin;
+            position: absolute;
+            z-index: 2000;
+            cursor: pointer;
+            font-family: 'Black Han Sans';
+            font-size: 2.5vmin;
+            color: #888;
+            transition: 0.3s;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 1.5vmin 3vmin;
+            border-radius: 0.8vmin;
         }
-        .nav-ui:hover { color: #fff; background: var(--accent-color); }
-        #btn-menu { top: 3vmin; left: 3vmin; }
-        #btn-prev { bottom: 3vmin; left: 3vmin; }
-        #btn-next { bottom: 3vmin; right: 3vmin; }
+
+        .nav-ui:hover {
+            color: #fff;
+            background: var(--accent-color);
+        }
+
+        #btn-menu {
+            top: 3vmin;
+            left: 3vmin;
+        }
+
+        #btn-prev {
+            bottom: 3vmin;
+            left: 3vmin;
+        }
+
+        #btn-next {
+            bottom: 3vmin;
+            right: 3vmin;
+        }
 
         .drawer {
-            position: absolute; top: 0; left: -50vmin; width: 45vmin; height: 100%;
-            background: rgba(0, 0, 0, 0.95); border-right: 0.3vmin solid var(--accent-color);
-            transition: left 0.3s ease; z-index: 3000; padding: 5vmin;
+            position: absolute;
+            top: 0;
+            left: -50vmin;
+            width: 45vmin;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.95);
+            border-right: 0.3vmin solid var(--accent-color);
+            transition: left 0.3s ease;
+            z-index: 3000;
+            padding: 5vmin;
         }
-        .drawer.open { left: 0; }
-        .drawer h2 { font-size: 3vmin; margin-bottom: 4vmin; color: white; }
-        .drawer li { margin-bottom: 3vmin; cursor: pointer; list-style: none; font-size: 2.2vmin; font-weight: bold; color: #aaa; }
-        .drawer li:hover { color: var(--accent-color); }
+
+        .drawer.open {
+            left: 0;
+        }
+
+        .drawer h2 {
+            font-size: 3vmin;
+            margin-bottom: 4vmin;
+        }
+
+        .drawer li {
+            margin-bottom: 3vmin;
+            cursor: pointer;
+            list-style: none;
+            font-size: 2.2vmin;
+            font-weight: bold;
+        }
+
+        .drawer li:hover {
+            color: var(--accent-color);
+        }
 
         .scene {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            display: flex; flex-direction: column; justify-content: center; align-items: center;
-            opacity: 0; pointer-events: none; transition: opacity 0.8s ease; background: #000;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.8s ease;
+            background: #000;
         }
-        .scene.active { opacity: 1; pointer-events: all; }
 
-        .cover-container { position: relative; width: 100%; height: 100%; }
-        .cover-img { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: contain; transition: opacity 2s ease; }
-        .intro-text-box {
-            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            z-index: 10; text-align: center; opacity: 0; transition: opacity 1s; width: 100%;
+        .scene.active {
+            opacity: 1;
+            pointer-events: all;
         }
-        .intro-title { font-family: 'Black Han Sans'; font-size: 12vmin; margin-bottom: 5vmin; text-shadow: 0 0 4vmin rgba(231, 76, 60, 0.8); color: #fff; }
+
+        /* Scene 공통 스타일 */
+        .cover-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+        }
+
+        .cover-img {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            transition: opacity 2s ease;
+        }
+
+        .intro-text-box {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 10;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: opacity 1s;
+            width: 100%;
+        }
+
+        .intro-title {
+            font-family: 'Black Han Sans';
+            font-size: 12vmin;
+            margin-bottom: 5vmin;
+            text-shadow: 0 0 4vmin rgba(231, 76, 60, 0.8);
+            color: #fff;
+        }
 
         .btn-main {
-            padding: 3vmin 10vmin; font-size: 4vmin; background: var(--accent-color);
-            color: #fff; border: none; cursor: pointer; font-family: 'Black Han Sans';
-            box-shadow: 0 0 5vmin var(--accent-color); animation: pulse 2s infinite;
+            padding: 3vmin 10vmin;
+            font-size: 4vmin;
+            background: var(--accent-color);
+            color: #fff;
+            border: none;
+            cursor: pointer;
+            font-family: 'Black Han Sans';
+            box-shadow: 0 0 5vmin var(--accent-color);
+            animation: pulse 2s infinite;
         }
 
-        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
+        @keyframes pulse {
+            0% {
+                transform: scale(1);
+            }
 
-        .video-wrapper-full { width: 100%; height: 100%; background: #000; }
-        .video-wrapper-full video { width: 100%; height: 100%; object-fit: contain; }
+            50% {
+                transform: scale(1.05);
+            }
 
-        .comic-viewport { width: 100%; height: 100%; overflow: hidden; position: relative; background: #000; }
+            100% {
+                transform: scale(1);
+            }
+        }
+
+        .video-wrapper-full {
+            width: 100%;
+            height: 100%;
+            background: #000;
+        }
+
+        .video-wrapper-full video {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+
+        /* Scene 3: 회귀 스타일 */
+        .comic-viewport {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            position: relative;
+            background: #000;
+        }
+
         .comic-image {
-            width: 200%; height: 200%; object-fit: cover; opacity: 0.8;
-            transform-origin: top left; animation: comic-sequence 15s linear forwards;
+            width: 200%;
+            height: 200%;
+            object-fit: cover;
+            opacity: 0.8;
+            transform-origin: top left;
+            animation: comic-sequence 15s linear forwards;
         }
+
         @keyframes comic-sequence {
-            0% { transform: translate(0, -50%); } 20% { transform: translate(0, -50%); }
-            25% { transform: translate(-50%, 0); } 45% { transform: translate(-50%, 0); }
-            50% { transform: translate(0, 0); } 70% { transform: translate(0, 0); }
-            75% { transform: translate(-50%, -50%); } 90% { transform: translate(-50%, -50%); }
-            100% { width: 100%; height: 100%; transform: translate(0, 0); }
+            0% {
+                transform: translate(0, -50%);
+            }
+
+            20% {
+                transform: translate(0, -50%);
+            }
+
+            25% {
+                transform: translate(-50%, 0);
+            }
+
+            45% {
+                transform: translate(-50%, 0);
+            }
+
+            50% {
+                transform: translate(0, 0);
+            }
+
+            70% {
+                transform: translate(0, 0);
+            }
+
+            75% {
+                transform: translate(-50%, -50%);
+            }
+
+            90% {
+                transform: translate(-50%, -50%);
+            }
+
+            100% {
+                width: 100%;
+                height: 100%;
+                transform: translate(0, 0);
+            }
         }
 
         .scene3-text {
-            position: absolute; bottom: 10%; left: 50%; transform: translateX(-50%);
-            width: 90%; text-align: center; font-size: 3.5vmin; background: rgba(0, 0, 0, 0.5);
-            padding: 3vmin; border-radius: 2vmin; white-space: pre-wrap; font-weight: bold; color: white;
+            position: absolute;
+            bottom: 10%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 90%;
+            text-align: center;
+            font-size: 3.5vmin;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 3vmin;
+            border-radius: 2vmin;
+            white-space: pre-wrap;
+            font-weight: bold;
         }
 
-        #flash-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #fff; z-index: 5000; pointer-events: none; opacity: 0; }
-        .flash-active { animation: flash-anim 3s forwards; }
-        @keyframes flash-anim { 0%, 100% { opacity: 0; } 10%, 90% { opacity: 1; } }
-
-        .line-text-container { width: 94%; display: flex; flex-direction: column; gap: 2vmin; align-items: center; justify-content: center; }
-        .line-text {
-            font-size: 4.5vmin; font-family: 'Noto Sans KR', sans-serif; font-weight: bold;
-            color: #fff; opacity: 0; transition: opacity 1s ease; text-align: center;
-            text-shadow: 0 0 1.5vmin rgba(0, 0, 0, 0.8); line-height: 1.4; width: 100%;
-        }
-        .golden-word {
-            color: #e8b84b; text-shadow: 0.2vmin 0.2vmin 0.5vmin rgba(0, 0, 0, 0.6);
-            display: inline-block; font-family: 'Black Han Sans';
-            animation: gold-flutter 3s infinite ease-in-out; margin: 0 0.8vmin;
-        }
-        @keyframes gold-flutter { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-0.3vmin); } }
-
-        .dystopia-title {
-            font-family: 'Black Han Sans'; font-size: 6.5vmin; margin-bottom: 5vmin;
-            color: #fff; text-shadow: 0 0 3vmin #ff0000, 0 0 6vmin #ff0000; text-align: center;
+        #flash-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #fff;
+            z-index: 5000;
+            pointer-events: none;
+            opacity: 0;
         }
 
-        /* --- [모바일 전용 환경: 가로폭 1024px 이하일 때만 강제 스케일링 작동] --- */
-        @media (max-width: 1024px) {
-            .main-wrapper {
-                position: absolute;
-                top: 50%; left: 50%;
-                width: 1920px !important;
-                height: 1080px !important;
-                max-width: none !important;
-                max-height: none !important;
-                margin-top: -540px;
-                margin-left: -960px;
-                transform-origin: center center;
+        .flash-active {
+            animation: flash-anim 3s forwards;
+        }
+
+        @keyframes flash-anim {
+
+            0%,
+            100% {
+                opacity: 0;
             }
 
-            .start-msg { font-size: 86px; }
-            .start-sub { margin-top: 32px; font-size: 21px; }
-            .nav-ui { font-size: 27px; padding: 16px 32px; border-radius: 8px; }
-            #btn-menu { top: 32px; left: 32px; }
-            #btn-prev { bottom: 32px; left: 32px; }
-            #btn-next { bottom: 32px; right: 32px; }
-            .drawer { left: -540px; width: 486px; border-right-width: 3px; padding: 54px; }
-            .drawer h2 { font-size: 32px; margin-bottom: 43px; }
-            .drawer li { margin-bottom: 32px; font-size: 23px; }
-            .intro-title { font-size: 129px; margin-bottom: 54px; text-shadow: 0 0 43px rgba(231, 76, 60, 0.8); }
-            .btn-main { padding: 32px 108px; font-size: 43px; box-shadow: 0 0 54px var(--accent-color); }
-            .scene3-text { font-size: 37px; padding: 32px; border-radius: 21px; }
-            .line-text-container { gap: 21px; }
-            .line-text { font-size: 48px; text-shadow: 0 0 16px rgba(0, 0, 0, 0.8); }
-            .golden-word { margin: 0 8px; text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.6); }
-            .dystopia-title { font-size: 70px; margin-bottom: 54px; text-shadow: 0 0 32px #ff0000, 0 0 64px #ff0000; }
+            10%,
+            90% {
+                opacity: 1;
+            }
+        }
+
+        /* Scene 4: 각성 스타일 */
+        .line-text-container {
+            width: 94%;
+            display: flex;
+            flex-direction: column;
+            gap: 2vmin;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .line-text {
+            font-size: 4.5vmin;
+            font-family: 'Noto Sans KR', sans-serif;
+            font-weight: bold;
+            color: #fff;
+            opacity: 0;
+            transition: opacity 1s ease;
+            text-align: center;
+            text-shadow: 0 0 1.5vmin rgba(0, 0, 0, 0.8);
+            line-height: 1.4;
+            width: 100%;
+        }
+
+        .golden-word {
+            color: #e8b84b;
+            text-shadow: 0.2vmin 0.2vmin 0.5vmin rgba(0, 0, 0, 0.6);
+            display: inline-block;
+            font-family: 'Black Han Sans';
+            animation: gold-flutter 3s infinite ease-in-out;
+            margin: 0 0.8vmin;
+        }
+
+        @keyframes gold-flutter {
+
+            0%,
+            100% {
+                transform: translateY(0);
+            }
+
+            50% {
+                transform: translateY(-0.3vmin);
+            }
+        }
+
+        /* Scene 6: 대한민국 타이틀 */
+        .dystopia-title {
+            font-family: 'Black Han Sans';
+            font-size: 6.5vmin;
+            margin-bottom: 5vmin;
+            color: #fff;
+            text-shadow: 0 0 3vmin #ff0000, 0 0 6vmin #ff0000;
+            text-align: center;
+        }
+        /* --- [모바일 맞춤형 풀 반응형 미디어 쿼리] --- */
+        @media screen and (max-width: 768px) and (orientation: portrait) {
+            body, .main-wrapper { 
+                /* 인트로는 씬 전환 형식이므로 높이는 100vh로 유지하되 최대비율 고정을 품 */
+                max-width: none;
+                max-height: none;
+                min-height: 100vh;
+            }
+            
+            .comic-image {
+                width: 200%;
+                height: 200%;
+                object-fit: fill; /* 모바일 폭이 좁아져도 이미지가 폭에 맞춰 온전히 담기도록 패치 */
+            }
+            
+            /* 시작 화면 */
+            .start-msg { font-size: 9vw; text-align: center; width: 100%; word-break: keep-all; }
+            #start-overlay p { font-size: 4vw !important; margin-top: 5vw !important; text-align: center; width: 100%; word-break: keep-all; padding: 0 4vw; box-sizing: border-box; }
+            
+            /* 네비게이션 UI 터치 영역 확대 */
+            .nav-ui { font-size: 4.5vw; padding: 2.5vw 4vw; border-radius: 1.5vw; }
+            #btn-menu { top: 5vw; left: 5vw; }
+            #btn-prev { bottom: 5vw; left: 5vw; }
+            #btn-next { bottom: 5vw; right: 5vw; }
+            
+            /* 서랍(메뉴) 너비 최적화 */
+            .drawer { width: 75vw; left: -80vw; padding: 8vw; }
+            .drawer.open { left: 0; }
+            .drawer h2 { font-size: 6vw; margin-bottom: 6vw; }
+            .drawer li { font-size: 5vw; margin-bottom: 5vw; }
+            
+            /* 씬 2: 메인 타이틀 및 버튼 */
+            .intro-title { font-size: 16vw; margin-bottom: 8vw; text-shadow: 0 0 6vw rgba(231, 76, 60, 0.8); }
+            .btn-main { padding: 4vw 14vw; font-size: 6vw; box-shadow: 0 0 8vw var(--accent-color); }
+            
+            /* 씬 3: 회귀 텍스트 */
+            .scene3-text { font-size: 5vw; padding: 5vw; border-radius: 3vw; bottom: 15%; width: 85%; }
+            
+            /* 씬 4: 각성 텍스트 줄 간격 및 크기 */
+            .line-text-container { gap: 4vw; }
+            .line-text { font-size: 6vw; text-shadow: 0 0 2vw rgba(0, 0, 0, 0.8); }
+            .golden-word { margin: 0 1vw; text-shadow: 0.5vw 0.5vw 1vw rgba(0, 0, 0, 0.6); }
+            
+            /* 씬 6: 아웃트로 타이틀 */
+            .dystopia-title { font-size: 10vw; margin-bottom: 6vw; text-shadow: 0 0 4vw #ff0000, 0 0 8vw #ff0000; }
+            .part1-title { font-size: 8vw; text-shadow: 0 0 3vw #ff0000, 0 0 6vw #ff0000; }
+            .author-text { font-size: 4.5vw; margin-top: 10vw; }
         }
     </style>
 </head>
 
 <body oncontextmenu="return false" onselectstart="return false" ondragstart="return false">
-
-    <div class="main-wrapper" id="main-wrapper">
+    <div class="main-wrapper">
         <div id="flash-overlay"></div>
 
+        <!-- UI: 전역 내비게이션 및 시작 오버레이 -->
         <div id="start-overlay" onclick="startExperience()">
             <div class="start-msg">▼ CLICK TO START ▼</div>
-            <p class="start-sub">화면을 클릭하면 음악과 함께 시작됩니다.</p>
+            <p style="color:#888; margin-top:3vmin; font-size: 2vmin; text-align: center;">화면을 클릭하면 음악과 함께 시작됩니다.</p>
         </div>
 
         <div class="nav-ui" id="btn-menu" onclick="toggleDrawer()">☰ MENU</div>
@@ -202,73 +481,90 @@
             </ul>
         </div>
 
+        <!-- START: 01. 킹메이커 시작 (Scene 1) -->
         <div id="scene-1" class="scene active">
-            <audio id="bgm-intro" src="https://ooo9luzdoplzs8wq.public.blob.vercel-storage.com/%ED%95%84%ED%84%B0%EB%B2%84%EB%B8%94/%EC%9D%B8%ED%8A%B8%EB%A1%9C.mp3" loop></audio>
+            <audio id="bgm-intro"
+                src="https://ooo9luzdoplzs8wq.public.blob.vercel-storage.com/%ED%95%84%ED%84%B0%EB%B2%84%EB%B8%94/%EC%9D%B8%ED%8A%B8%EB%A1%9C.mp3"
+                loop></audio>
             <div class="cover-container">
-                <img src="https://ooo9luzdoplzs8wq.public.blob.vercel-storage.com/%ED%95%84%ED%84%B0%EB%B2%84%EB%B8%94/%ED%91%9C%EC%A7%80%201.png" id="cover-1" class="cover-img" alt="표지1">
-                <img src="https://ooo9luzdoplzs8wq.public.blob.vercel-storage.com/%ED%95%84%ED%84%B0%EB%B2%84%EB%B8%94/%ED%91%9C%EC%A7%80%202.png" id="cover-2" class="cover-img" alt="표지2">
+                <img src="https://ooo9luzdoplzs8wq.public.blob.vercel-storage.com/%ED%95%84%ED%84%B0%EB%B2%84%EB%B8%94/%ED%91%9C%EC%A7%80%201.png"
+                    id="cover-1" class="cover-img" alt="표지1">
+                <img src="https://ooo9luzdoplzs8wq.public.blob.vercel-storage.com/%ED%95%84%ED%84%B0%EB%B2%84%EB%B8%94/%ED%91%9C%EC%A7%80%202.png"
+                    id="cover-2" class="cover-img" alt="표지2">
                 <div class="intro-text-box" id="intro-ui">
                     <div class="intro-title">MISSION START</div>
                     <button class="btn-main" onclick="changeScene(1)">선거 본부 참여하기</button>
                 </div>
             </div>
         </div>
+        <!-- END: 01. 킹메이커 시작 -->
 
+        <!-- START: 02. 킹메이커 영상 (Scene 2) -->
         <div id="scene-2" class="scene">
             <div class="video-wrapper-full">
                 <video controls controlsList="nodownload" oncontextmenu="return false;">
-                    <source src="https://ooo9luzdoplzs8wq.public.blob.vercel-storage.com/%ED%95%84%ED%84%B0%EB%B2%84%EB%B8%94/%ED%82%B9%EB%A9%94%EC%9D%B4%EC%BB%A4.mp4" type="video/mp4">
+                    <source
+                        src="https://ooo9luzdoplzs8wq.public.blob.vercel-storage.com/%ED%95%84%ED%84%B0%EB%B2%84%EB%B8%94/%ED%82%B9%EB%A9%94%EC%9D%B4%EC%BB%A4.mp4"
+                        type="video/mp4">
                 </video>
             </div>
         </div>
+        <!-- END: 02. 킹메이커 영상 -->
 
+        <!-- START: 03. 회귀 (Scene 3) -->
         <div id="scene-3" class="scene">
             <div class="comic-viewport">
-                <img src="https://ooo9luzdoplzs8wq.public.blob.vercel-storage.com/%ED%95%84%ED%84%B0%EB%B2%84%EB%B8%94/%EC%BB%A8%EC%85%89.png" class="comic-image">
+                <img src="https://ooo9luzdoplzs8wq.public.blob.vercel-storage.com/%ED%95%84%ED%84%B0%EB%B2%84%EB%B8%94/%EC%BB%A8%EC%85%89.png"
+                    class="comic-image">
             </div>
             <div class="scene3-text" id="scene3-typewriter"></div>
         </div>
+        <!-- END: 03. 회귀 -->
 
+        <!-- START: 04. 각성 (Scene 4) -->
         <div id="scene-4" class="scene">
             <div class="line-text-container" id="scene4-lines"></div>
         </div>
+        <!-- END: 04. 각성 -->
 
+        <!-- START: 05. 현황 영상 (Scene 5) -->
         <div id="scene-5" class="scene">
             <div class="video-wrapper-full">
                 <video id="status-video" controls controlsList="nodownload" oncontextmenu="return false;">
-                    <source src="https://ooo9luzdoplzs8wq.public.blob.vercel-storage.com/%ED%95%84%ED%84%B0%EB%B2%84%EB%B8%94/%ED%98%84%ED%99%A9.mp4" type="video/mp4">
+                    <source
+                        src="https://ooo9luzdoplzs8wq.public.blob.vercel-storage.com/%ED%95%84%ED%84%B0%EB%B2%84%EB%B8%94/%ED%98%84%ED%99%A9.mp4"
+                        type="video/mp4">
                 </video>
             </div>
         </div>
+        <!-- END: 05. 현황 영상 -->
 
+        <!-- START: 06. 2026 대한민국 (Scene 6) -->
         <div id="scene-6" class="scene">
             <h2 class="dystopia-title">2026 대한민국은 지금</h2>
             <div class="line-text-container" id="scene6-lines"></div>
+            <div style="margin-top:5vmin; text-align:center;">
+                <p style="color:var(--gold-color); font-weight:bold; margin-bottom:3vmin;"></p>
+            </div>
             <audio id="bgm-dystopia">
-                <source src="https://ooo9luzdoplzs8wq.public.blob.vercel-storage.com/%ED%95%84%ED%84%B0%EB%B2%84%EB%B8%94/%EB%8C%80%ED%95%9C%EB%AF%BC%EA%B5%AD%EC%9D%80%20%EC%A7%80%EA%B8%88.mp3" type="audio/mp3">
+                <source
+                    src="https://ooo9luzdoplzs8wq.public.blob.vercel-storage.com/%ED%95%84%ED%84%B0%EB%B2%84%EB%B8%94/%EB%8C%80%ED%95%9C%EB%AF%BC%EA%B5%AD%EC%9D%80%20%EC%A7%80%EA%B8%88.mp3"
+                    type="audio/mp3">
             </audio>
         </div>
-    </div> <script>
-        // --- [PC/모바일 하이브리드 스케일링 로직] ---
-        function resizeApp() {
-            const wrapper = document.getElementById('main-wrapper');
-            if (window.innerWidth <= 1024) {
-                // 모바일/태블릿: 1920x1080 스케일링 적용
-                const scale = Math.min(window.innerWidth / 1920, window.innerHeight / 1080);
-                wrapper.style.transform = `scale(${scale})`;
-            } else {
-                // PC: 원본 코드 그대로 작동하도록 스케일링 해제
-                wrapper.style.transform = 'none';
-            }
-        }
-        window.addEventListener('resize', resizeApp);
-        resizeApp(); // 초기 실행
-        // ---------------------------------------------
+        <!-- END: 06. 2026 대한민국 -->
+    </div>
 
+    <script>
+        /**
+         * Global State & Configuration
+         */
         let currentScene = 1;
         let typingTimer;
 
-        // 원본 보안 로직 복구
+        /**
+         * [보안] 우클릭, 드래그, 단축키 차단
+         */
         document.addEventListener('contextmenu', (e) => e.preventDefault());
         document.addEventListener('keydown', (e) => {
             if (e.keyCode === 123) { e.preventDefault(); return false; }
@@ -277,6 +573,9 @@
         });
         document.addEventListener('dragstart', (e) => e.preventDefault());
 
+        /**
+         * System Core Functions
+         */
         function startExperience() {
             document.getElementById('start-overlay').style.display = 'none';
             initScene1();
@@ -286,7 +585,7 @@
         function changeScene(dir) { goToScene(currentScene + dir); }
 
         function goToScene(num) {
-            if (num < 1 || num > 6) return;
+            if (num < 1 || num > 6) return; // 파트 1은 6번에서 종료
 
             document.getElementById(`scene-${currentScene}`).classList.remove('active');
             document.querySelectorAll('video').forEach(v => v.pause());
@@ -297,16 +596,21 @@
             const introBgm = document.getElementById('bgm-intro');
 
             if (num === 2) introBgm.pause();
+
             if (num === 3) {
                 introBgm.play();
                 startTyping('scene3-typewriter', "김운범 후보... 낙선....\n당했다... 빗물과 피가 섞이기 시작한다...\n만약... 내게 한 번만 더 기회가 주어진다면...", 120);
             }
+
             if (currentScene === 3 && num === 4) triggerFlash();
+
             if (num === 4) {
                 const lines = ["최고의 선거 조력자였던 당신은 곧 눈을 뜹니다.", "말도 안 되는 이 상황에서 정신 차리고,", "다시 한번 본인의 명예와 자존심을 위해 뛰어듭니다.", "판을 흔들고 후보자를 대통령으로 당선 시키세요!!", "이것이 당신의 마지막 기회입니다."];
                 startLineAnimation('scene4-lines', lines, 2000, applyGoldenEffect);
             }
+
             if (num === 5) { introBgm.pause(); introBgm.currentTime = 0; }
+
             if (num === 6) {
                 document.getElementById('bgm-dystopia').play();
                 const lines6 = ["남녀 갈등, 세대 갈등, AI 일자리 문제", "저출산 고령화, 국가 전쟁 문제로", "국민을 통합할 대통령이 필요하다!!", "당신의 능력으로 후보자를 대통령으로 만들어라!"];
@@ -318,6 +622,9 @@
             document.getElementById('drawer').classList.remove('open');
         }
 
+        /**
+         * UI Animation Functions
+         */
         function startLineAnimation(id, arr, interval, callback) {
             const container = document.getElementById(id); container.innerHTML = "";
             arr.forEach((txt, idx) => {
@@ -339,6 +646,9 @@
             container.innerHTML = html;
         }
 
+        /**
+         * Utilities
+         */
         function triggerFlash() {
             const flash = document.getElementById('flash-overlay');
             flash.classList.add('flash-active');
@@ -372,5 +682,52 @@
             }, 5000);
         }
     </script>
+
+<script>
+    // 1. 키보드 단축키 차단 (F12, Ctrl+Shift+I, Ctrl+U 등)
+    document.addEventListener('keydown', function(event) {
+        if (event.keyCode === 123 || // F12
+           (event.ctrlKey && event.shiftKey && event.keyCode === 73) || // Ctrl+Shift+I
+           (event.ctrlKey && event.shiftKey && event.keyCode === 74) || // Ctrl+Shift+J
+           (event.ctrlKey && event.keyCode === 85)) { // Ctrl+U
+            event.preventDefault();
+            event.returnValue = false;
+        }
+    });
+
+    // 2. 개발자 도구 강제 정지 (무한 디버거 덫)
+    setInterval(function() {
+        var before = new Date().getTime();
+        debugger; 
+        var after = new Date().getTime();
+        if (after - before > 100) {
+            document.body.innerHTML = "<h1 style='color:red; text-align:center; margin-top:50px;'>보안 정책에 의해 접근이 차단되었습니다.</h1>";
+        }
+    }, 1000);
+</script>
+
+    
+ <script>
+        // 1. 마우스 우클릭 방지 (contextmenu 이벤트 차단)
+        document.addEventListener('contextmenu', function(event) {
+            event.preventDefault();
+        });
+
+        // 추가 팁: 드래그 및 복사도 방지하고 싶다면 아래 주석을 해제하세요.
+        /*
+        // 2. 텍스트 드래그 방지
+        document.addEventListener('selectstart', function(event) {
+            event.preventDefault();
+        });
+
+        // 3. 복사(Ctrl+C) 방지
+        document.addEventListener('copy', function(event) {
+            event.preventDefault();
+        });
+        */
+    </script>
+
+
 </body>
+
 </html>
